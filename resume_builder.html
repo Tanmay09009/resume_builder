@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Resume Builder — Professional PDF Export</title>
+<style>
+  :root{--accent:#0b63ce;--muted:#6b7280;--bg:#f4f6fb}
+  body{font-family:Inter,Segoe UI,Helvetica,Arial,sans-serif;margin:0;background:var(--bg);color:#111}
+  .wrap{max-width:1100px;margin:32px auto;padding:20px}
+  .panel{display:grid;grid-template-columns:360px 1fr;gap:20px}
+  .card, .formcard{background:#fff;border-radius:12px;padding:18px;box-shadow:0 6px 20px rgba(20,30,60,0.06)}
+  h2{margin:0 0 12px;color:var(--accent)}
+  label{display:block;font-size:13px;color:var(--muted);margin:8px 0 6px}
+  input[type=text],input[type=email],input[type=tel],textarea,select{width:100%;padding:10px;border:1px solid #e6eef8;border-radius:8px;font-size:14px}
+  textarea{min-height:80px;resize:vertical}
+  .actions{display:flex;gap:8px;margin-top:12px}
+  button{background:var(--accent);color:#fff;border:none;padding:9px 14px;border-radius:8px;cursor:pointer;font-weight:600}
+  button.secondary{background:#eef4ff;color:var(--accent)}
+  .small{font-size:13px;color:var(--muted)}
+  /* preview resume */
+  .previewWrap{padding:22px;display:flex;justify-content:center}
+  .resume{width:794px; /* 210mm at 96dpi ~ 794px */ background:#fff;border-radius:6px;padding:28px;box-shadow:0 6px 30px rgba(20,30,60,0.08);color:#111}
+  .top{display:flex;gap:18px;align-items:center}
+  .photo{width:110px;height:110px;border-radius:8px;overflow:hidden;background:#f3f6fb;display:flex;align-items:center;justify-content:center;border:1px solid #e6eef8}
+  .photo img{width:100%;height:100%;object-fit:cover}
+  .hdr{flex:1}
+  .name{font-size:22px;font-weight:800;color:#0b63ce}
+  .title{color:var(--muted);margin-top:4px}
+  .contact{margin-top:8px;font-size:13px;color:var(--muted)}
+  .section{margin-top:16px}
+  .section h3{margin:0 0 8px;font-size:15px;color:var(--accent)}
+  .twoCol{display:flex;gap:18px}
+  .leftCol{width:65%}
+  .rightCol{width:35%}
+  .skill{display:inline-block;background:#f3f8ff;color:var(--accent);padding:6px 8px;border-radius:6px;margin:4px 6px 4px 0;font-size:13px}
+  .eduItem,.expItem{margin-bottom:10px}
+  .sigRow{display:flex;justify-content:space-between;align-items:center;margin-top:28px}
+  .sigBox{width:45%;text-align:center}
+  .sigImg{height:60px;display:block;margin:8px auto}
+  /* signature canvas */
+  .sigPad{border:1px dashed #dbe7fa;border-radius:6px;height:90px;background:#fbfdff}
+  /* hide UI for print */
+  @media print{
+    body{background:#fff}
+    .wrap .panel,.wrap .formcard{display:none !important}
+    .resume{box-shadow:none;border-radius:0;padding:16px;margin:0}
+  }
+  @media(max-width:920px){.panel{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h2>Resume Builder</h2>
+  <div class="panel">
+    <div class="formcard card">
+      <h3>Personal Details</h3>
+      <label>Full Name</label><input id="name" type="text" placeholder="e.g. Rajesh Kumar">
+      <label>Professional Title</label><input id="title" type="text" placeholder="e.g. Frontend Developer">
+      <label>Email</label><input id="email" type="email" placeholder="email@example.com">
+      <label>Phone</label><input id="phone" type="tel" placeholder="+91 9XXXXXXXXX">
+      <label>Location</label><input id="location" type="text" placeholder="City, State">
+      <label>Summary / Objective</label><textarea id="summary" placeholder="Short professional summary"></textarea>
+
+      <h3 style="margin-top:14px">Work Experience</h3>
+      <div id="expList">
+        <div class="expRow">
+          <label>Company / Role</label><input class="exp_company" type="text" placeholder="Company - Role">
+          <label>Period</label><input class="exp_period" type="text" placeholder="2020 - Present">
+          <label>Details</label><textarea class="exp_desc" placeholder="Short bullets or description"></textarea>
+        </div>
+      </div>
+      <div class="actions" style="margin-bottom:6px">
+        <button id="addExp" class="secondary">Add Experience</button>
+        <button id="removeExp" class="secondary">Remove Last</button>
+      </div>
+
+      <h3>Education</h3>
+      <div id="eduList">
+        <div class="eduRow">
+          <label>Institution / Degree</label><input class="edu_inst" type="text" placeholder="College - Degree">
+          <label>Year / Score</label><input class="edu_year" type="text" placeholder="2018 - 2022">
+        </div>
+      </div>
+      <div class="actions" style="margin-bottom:6px">
+        <button id="addEdu" class="secondary">Add Education</button>
+        <button id="removeEdu" class="secondary">Remove Last</button>
+      </div>
+
+      <h3>Skills</h3>
+      <label>Enter skills separated by comma</label>
+      <input id="skills" placeholder="HTML, CSS, JavaScript, React">
+
+      <h3>Photo & Signature</h3>
+      <label>Passport Photo (JPG/PNG)</label>
+      <input id="photoInput" type="file" accept="image/*">
+      <div style="height:10px"></div>
+      <label>Signature (draw)</label>
+      <div class="sigPad" id="sigPad"></div>
+      <div class="actions" style="margin-top:8px">
+        <button id="clearSig" class="secondary">Clear Signature</button>
+      </div>
+
+      <div class="actions" style="margin-top:14px">
+        <button id="generate">Generate Resume</button>
+        <button id="clearAll" class="secondary">Clear Form</button>
+      </div>
+
+      <div class="small" style="margin-top:12px">After generating use Download PDF / Print on the right to export a professional A4 resume including photo & signature.</div>
+    </div>
+
+    <div>
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-bottom:10px">
+        <button id="downloadMain" class="secondary" style="background:var(--accent);color:#fff">Download PDF</button>
+        <button id="printMain" class="secondary">Print</button>
+      </div>
+
+      <div class="previewWrap">
+        <div class="resume" id="resumeCard">
+          <div class="top">
+            <div class="photo" id="photoPreview"><span class="small">Photo</span></div>
+            <div class="hdr">
+              <div class="name" id="r_name">Your Name</div>
+              <div class="title" id="r_title">Professional Title</div>
+              <div class="contact small" id="r_contact">Email · Phone · Location</div>
+            </div>
+          </div>
+
+          <div class="twoCol section">
+            <div class="leftCol">
+              <h3>Summary</h3>
+              <div id="r_summary" class="small">Professional summary goes here.</div>
+
+              <h3 style="margin-top:12px">Experience</h3>
+              <div id="r_experience"></div>
+
+              <h3 style="margin-top:12px">Education</h3>
+              <div id="r_education"></div>
+            </div>
+
+            <div class="rightCol">
+              <h3>Skills</h3>
+              <div id="r_skills"></div>
+
+              <div style="margin-top:18px">
+                <h3>Contact</h3>
+                <div class="small" id="r_contact_full"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="sigRow">
+            <div class="sigBox">
+              <div style="height:40px;border-bottom:1px solid #d7e6fa;width:80%;margin:0 auto"></div>
+            </div>
+            <img id="sigPreview" class="sigImg" alt="signature" src="">
+            <div class="small">Applicant Signature</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- libs -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script>
+  // Helpers
+  function el(id){return document.getElementById(id)}
+  // signature pad (simple)
+  const sigPad = el('sigPad');
+  let drawing=false, lastX=0,lastY=0;
+  const sigCanvas = document.createElement('canvas');
+  sigCanvas.width = sigPad.clientWidth;
+  sigCanvas.height = sigPad.clientHeight;
+  sigPad.appendChild(sigCanvas);
+  const sctx = sigCanvas.getContext('2d');
+  sctx.strokeStyle = '#111';
+  sctx.lineWidth = 2.2;
+  function resizeSig(){ sigCanvas.width = sigPad.clientWidth; sigCanvas.height = sigPad.clientHeight; sctx.lineWidth=2.2; }
+  window.addEventListener('resize', resizeSig);
+  function pointerDown(e){ drawing=true; const r=sigCanvas.getBoundingClientRect(); lastX = (e.touches?e.touches[0].clientX:e.clientX)-r.left; lastY = (e.touches?e.touches[0].clientY:e.clientY)-r.top; }
+  function pointerMove(e){ if(!drawing) return; const r=sigCanvas.getBoundingClientRect(); const x=(e.touches?e.touches[0].clientX:e.clientX)-r.left; const y=(e.touches?e.touches[0].clientY:e.clientY)-r.top; sctx.beginPath(); sctx.moveTo(lastX,lastY); sctx.lineTo(x,y); sctx.stroke(); lastX=x; lastY=y; }
+  function pointerUp(){ drawing=false; }
+  sigCanvas.addEventListener('mousedown',pointerDown); sigCanvas.addEventListener('touchstart',pointerDown);
+  sigCanvas.addEventListener('mousemove',pointerMove); sigCanvas.addEventListener('touchmove',pointerMove);
+  window.addEventListener('mouseup',pointerUp); window.addEventListener('touchend',pointerUp);
+  document.getElementById('clearSig').addEventListener('click', ()=>{ sctx.clearRect(0,0,sigCanvas.width,sigCanvas.height); el('sigPreview').src=''; });
+
+  // photo preview
+  el('photoInput').addEventListener('change', (ev)=>{
+    const f = ev.target.files && ev.target.files[0];
+    if(!f) return;
+    const reader = new FileReader();
+    reader.onload = ()=> { el('photoPreview').innerHTML = '<img src="'+reader.result+'" alt="photo">'; }
+    reader.readAsDataURL(f);
+  });
+
+  // dynamic lists
+  function addExperience(){
+    const container = document.createElement('div'); container.className='expRow';
+    container.innerHTML = `<label>Company / Role</label><input class="exp_company" type="text" placeholder="Company - Role"><label>Period</label><input class="exp_period" type="text" placeholder="2019 - 2021"><label>Details</label><textarea class="exp_desc" placeholder="Description"></textarea>`;
+    el('expList').appendChild(container);
+  }
+  function removeExperience(){ const c = el('expList'); if(c.children.length>1) c.removeChild(c.lastElementChild); }
+  document.getElementById('addExp').addEventListener('click', (e)=>{ e.preventDefault(); addExperience(); });
+  document.getElementById('removeExp').addEventListener('click', (e)=>{ e.preventDefault(); removeExperience(); });
+
+  function addEducation(){
+    const container = document.createElement('div'); container.className='eduRow';
+    container.innerHTML = `<label>Institution / Degree</label><input class="edu_inst" type="text" placeholder="Institution - Degree"><label>Year / Score</label><input class="edu_year" type="text" placeholder="2018">`;
+    el('eduList').appendChild(container);
+  }
+  function removeEducation(){ const c = el('eduList'); if(c.children.length>1) c.removeChild(c.lastElementChild); }
+  document.getElementById('addEdu').addEventListener('click', (e)=>{ e.preventDefault(); addEducation(); });
+  document.getElementById('removeEdu').addEventListener('click', (e)=>{ e.preventDefault(); removeEducation(); });
+
+  // generate resume preview
+  function gatherAndRender(){
+    el('r_name').textContent = el('name').value || 'Your Name';
+    el('r_title').textContent = el('title').value || 'Professional Title';
+    const email = el('email').value||'';
+    const phone = el('phone').value||'';
+    const loc = el('location').value||'';
+    el('r_contact').textContent = [email,phone,loc].filter(Boolean).join(' · ');
+    el('r_contact_full').textContent = [email,phone,loc].filter(Boolean).join('\n');
+    el('r_summary').textContent = el('summary').value || '—';
+    // experience
+    const exps = document.querySelectorAll('.expRow');
+    const expHtml = [];
+    exps.forEach(row=>{
+      const c = row.querySelector('.exp_company').value;
+      const p = row.querySelector('.exp_period').value;
+      const d = row.querySelector('.exp_desc').value;
+      if(c||d) expHtml.push(`<div class="expItem"><strong>${c||''}${p?(' — '+p):''}</strong><div class="small">${(d||'')}</div></div>`);
+    });
+    el('r_experience').innerHTML = expHtml.join('') || '<div class="small">No experience added.</div>';
+    // education
+    const eds = document.querySelectorAll('.eduRow');
+    const eduHtml = [];
+    eds.forEach(row=>{
+      const i = row.querySelector('.edu_inst').value;
+      const y = row.querySelector('.edu_year').value;
+      if(i) eduHtml.push(`<div class="eduItem"><strong>${i}</strong><div class="small">${y||''}</div></div>`);
+    });
+    el('r_education').innerHTML = eduHtml.join('') || '<div class="small">No education added.</div>';
+    // skills
+    const skills = (el('skills').value||'').split(',').map(s=>s.trim()).filter(Boolean);
+    el('r_skills').innerHTML = skills.map(s=>`<span class="skill">${s}</span>`).join('') || '<div class="small">No skills added.</div>';
+    // signature preview: capture canvas
+    const sigData = sigCanvas.toDataURL();
+    // if blank (all transparent) do not show
+    const blank = isCanvasBlank(sigCanvas);
+    el('sigPreview').src = blank ? '' : sigData;
+  }
+
+  function isCanvasBlank(c){
+    const blank = document.createElement('canvas');
+    blank.width = c.width; blank.height = c.height;
+    return c.toDataURL() === blank.toDataURL();
+  }
+
+  document.getElementById('generate').addEventListener('click', (e)=>{
+    e.preventDefault();
+    gatherAndRender();
+    // scroll to preview
+    document.querySelector('.resume').scrollIntoView({behavior:'smooth'});
+  });
+
+  document.getElementById('clearAll').addEventListener('click', ()=>{
+    if(!confirm('Clear all fields?')) return;
+    document.querySelectorAll('input[type=text],input[type=email],input[type=tel],textarea').forEach(i=>i.value='');
+    document.getElementById('skills').value='';
+    document.getElementById('photoPreview').innerHTML = '<span class="small">Photo</span>';
+    sctx.clearRect(0,0,sigCanvas.width,sigCanvas.height);
+    el('sigPreview').src='';
+    gatherAndRender();
+  });
+
+  // Download PDF / Print logic
+  async function exportResumePDF(filename){
+    const card = el('resumeCard');
+    // ensure latest render
+    gatherAndRender();
+    // hide interactive buttons during capture
+    const controls = document.querySelectorAll('.formcard, [id="downloadMain"], [id="printMain"]');
+    controls.forEach(n=>n.style.display='none');
+    // wait a frame
+    await new Promise(r=>setTimeout(r,200));
+    // use html2canvas
+    const canvas = await html2canvas(card, {scale:3,backgroundColor:'#ffffff', useCORS:true});
+    // restore controls
+    controls.forEach(n=>n.style.display='');
+    const imgData = canvas.toDataURL('image/png');
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({unit:'pt', format:'a4'});
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+    // compute image fit
+    const imgW = pageW - 40;
+    const imgH = (canvas.height * imgW) / canvas.width;
+    let x = 20, y = 20;
+    pdf.setFillColor(255,255,255);
+    pdf.rect(0,0,pageW,pageH,'F');
+    pdf.addImage(imgData, 'PNG', x, y, imgW, imgH, '', 'FAST');
+    pdf.save(filename || 'resume.pdf');
+  }
+
+  document.getElementById('downloadMain').addEventListener('click', ()=> {
+    const name = (el('name').value||'resume').replace(/\s+/g,'_');
+    exportResumePDF((name||'resume')+'.pdf');
+  });
+
+  document.getElementById('printMain').addEventListener('click', ()=>{
+    gatherAndRender();
+    // hide form panel then print via CSS @media print
+    const formPanel = document.querySelector('.formcard');
+    formPanel.style.display='none';
+    // small delay for rendering
+    setTimeout(()=>{ window.print(); formPanel.style.display='block'; }, 300);
+  });
+
+  // init
+  gatherAndRender();
+</script>
+</body>
+</html>
